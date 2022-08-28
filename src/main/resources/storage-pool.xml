@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<pool type="dir">
+    <name>pool01</name>
+    <source>
+    </source>
+    <capacity unit='GiB'>40</capacity>
+    <allocation>0</allocation>
+    <target>
+        <path>/opt/kvm/images</path>
+        <permissions>
+            <mode>0711</mode>
+            <owner>0</owner>
+            <group>0</group>
+        </permissions>
+    </target>
+</pool>

@@ -1,0 +1,1089 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/favicon.ico">
+    <link rel="canonical" href="https://getbootstrap.com/docs/3.4/examples/dashboard/">
+
+    <title>LDWCloud</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/assets/css/ie10-viewport-bug-workaround.css"
+          rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/examples/dashboard/dashboard.css"
+          rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]>
+    <script src="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/assets/js/ie8-responsive-file-warning.js"></script>
+    <![endif]-->
+    <script src="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/assets/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MyCloud</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">Dashboard</a></li>
+                <li><a href="#">Settings</a></li>
+                <li><a href="#">Login</a></li>
+                <li><a href="#">Help</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul id="myTab" class="nav  nav-sidebar nav-tabs">
+                <!--                <li class="active"><a href="#home">Overview <span class="sr-only">(current)</span></a></li>-->
+                <li class="active"><a href="#vmTab" data-toggle="tab">VM Manager</a></li>
+                <li><a href="#containerTab" data-toggle="tab">Docker Manager</a></li>
+                <li><a href="#imageTab" data-toggle="tab">Image Manager</a></li>
+            </ul>
+
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h1 class="page-header">控制台</h1>
+            <label>
+                <input type="text" class="form-control" placeholder="Search...">
+            </label>
+            <div class="tab-content">
+                <div id="vmTab" class="tab-pane active">
+                    <div id="vmList" class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>名称/ID</th>
+                                <th>监控</th>
+                                <th>状态</th>
+                                <th>CPU</th>
+                                <th>内存</th>
+                                <th>磁盘</th>
+                                <th>Guest-IP</th>
+                                <th>Host-IP</th>
+                                <th>类型</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="(vm ,index) in vmList">
+                                <td>{{vm.domainName}}</td>
+                                <td><a v-on:click="enterInfo(index)">打开</a></td>
+                                <td v-if="vm.state===0" class="text-muted">inactive</td>
+                                <td v-else-if="vm.state===1" class="text-success">running</td>
+                                <td v-else-if="vm.state===2" class="text-warning">installing</td>
+                                <td v-else-if="vm.state===3" class="text-info">migrating</td>
+                                <td v-else class="text-danger">error</td>
+                                <td>{{vm.vcpu}}核</td>
+                                <td>{{vm.memory}}GB</td>
+                                <td>{{vm.capacity}}GB</td>
+                                <td>{{vm.ip}}</td>
+                                <td>{{vm.nodeIp}}</td>
+                                <td v-if="vm.persistent">长期</td>
+                                <td v-else="vm.persistent">临时</td>
+                                <td>
+                                    <button class="btn btn-success" v-if="vm.state===0"
+                                            v-on:click="openVM(index)">
+                                        <span class="glyphicon glyphicon-play">&nbsp;运行</span>
+                                    </button>
+                                    <button class="btn btn-info" v-if="vm.state===1"
+                                            v-on:click="closeVM(index)">
+                                        <span class="glyphicon glyphicon-pause">&nbsp;关闭</span>
+                                    </button>
+                                    <button class="btn btn-danger" v-on:click="deleteVM(index)"
+                                            data-toggle="modal" data-target="#delModal">
+                                        <span class="glyphicon glyphicon-remove-sign">&nbsp;删除</span>
+                                    </button>
+                                    <button class="btn btn-warning" v-on:click="cloneVM(index)"
+                                            data-toggle="modal" data-target="#cloneModal">
+                                        <span class="	glyphicon glyphicon-copyright-mark">&nbsp;克隆</span>
+                                    </button>
+                                    <button class="btn btn-info" v-on:click="migrateVM(index)"
+                                            data-toggle="modal" data-target="#migrateModal">
+                                        <span class="	glyphicon glyphicon glyphicon-plane">&nbsp;迁移</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <button v-on:click="refreshIP()" class="btn btn-primary" data-toggle="modal"
+                                data-target="#createModal">
+                            <span class="glyphicon glyphicon-plus-sign">&nbsp;创建</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="containerTab" class="tab-pane">
+                    <div id="ctList" class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>名称/ID</th>
+                                <th>镜像</th>
+                                <th>状态</th>
+                                <th>ip</th>
+                                <th>Host-IP</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="(ct ,index) in ctList">
+                                <td>{{ct.name}}({{ct.id}})</td>
+                                <td>{{ct.image}}</td>
+                                <td v-if="ct.running===false" class="text-muted">inactive</td>
+                                <td v-else-if="ct.running===true" class="text-success">running</td>
+                                <td>{{ct.ip}}</td>
+                                <td>{{ct.nodeIp}}</td>
+                                <td>
+                                    <button class="btn btn-success" v-if="ct.running===false"
+                                            v-on:click="openContainer(index)">
+                                        <span class="glyphicon glyphicon-play">&nbsp;运行</span>
+                                    </button>
+                                    <button class="btn btn-info" v-if="ct.running===true"
+                                            v-on:click="closeContainer(index)">
+                                        <span class="glyphicon glyphicon-pause">&nbsp;关闭</span>
+                                    </button>
+                                    <button class="btn btn-danger" v-on:click="deleteContainer(index)"
+                                            data-toggle="modal" data-target="#delModal2">
+                                        <span class="glyphicon glyphicon-remove-sign">&nbsp;删除</span>
+                                    </button>
+                                    <button class="btn btn-warning" v-on:click="commitContainer(index)"
+                                            data-toggle="modal" data-target="#commitModal">
+                                        <span class="glyphicon 	glyphicon glyphicon-save">&nbsp;本地提交</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <button v-on:click="createContainer()" class="btn btn-primary" data-toggle="modal"
+                                data-target="#runModal">
+                            <span class="glyphicon glyphicon-plus-sign">&nbsp;创建</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="imageTab" class="tab-pane">
+                    <div id="imageList" class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Repository:Tag</th>
+                                <th>ID</th>
+                                <th>IP地址</th>
+                                <th>Size</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="(ct ,index) in imageList">
+                                <td>{{ct.name}}</td>
+                                <td>{{ct.id}}</td>
+                                <td>{{ct.nodeIp}}</td>
+                                <td>{{ct.size}}</td>
+                                <td>
+                                    <button class="btn btn-danger" v-on:click="deleteImage(index)"
+                                            data-toggle="modal" data-target="#delModal3">
+                                        <span class="glyphicon glyphicon-trash">&nbsp;删除</span>
+                                    </button>
+                                    <button class="btn btn-success" v-on:click="pushImage(index)"
+                                            data-toggle="modal" data-target="">
+                                        <span class="glyphicon 	glyphicon glyphicon-arrow-up">&nbsp;上传</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <button v-on:click="pullImage()" class="btn btn-primary" data-toggle="modal"
+                                data-target="#pullModal">
+                            <span class="glyphicon glyphicon-arrow-down">&nbsp;拉取</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- 创建模态框（Modal） -->
+<div class="modal fade" id="createModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="vmModal" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">虚拟机设置</h4>
+            </div>
+            <div class="modal-body">
+                <form role="form">
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" class="form-control" id="name" placeholder="请输入名称" v-model="nameSelect">
+                    </div>
+                    <div class="form-group">
+                        <label for="cpu">CPU核数:</label>
+                        <select id="cpu" class="form-control" v-model="cpuSelect">
+                            <option value="" disabled>---请选择CPU核心数量(必填)---</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>4</option>
+                            <option>6</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="memory">Memory(GB):</label>
+                        <select id="memory" class="form-control" v-model="memSelect">
+                            <option value="" disabled>---请选择内存容量(必填)---</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>4</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="disk">Disk(GB):</label>
+                        <select id="disk" class="form-control" v-model="diskSelect">
+                            <option value="" disabled>---请选择磁盘容量(必填)---</option>
+                            <option>10</option>
+                            <option>20</option>
+                            <option>30</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ip">IP(V4):</label>
+                        <select id="ip" class="form-control" v-model="ipSelect">
+                            <option value="" disabled>---请选择IP地址(可选)---</option>
+                            <option v-for="ip in ipList">{{ip}}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nodeIp">Host-IP(V4):</label>
+                        <select id="nodeIp" class="form-control" v-model="nodeIpSelect">
+                            <option value="" disabled>---请选择IP地址(可选)---</option>
+                            <option v-for="ip in nodeIpList">{{ip}}</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmCreate()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- VM克隆模态框（Modal） -->
+<div class="modal fade" id="cloneModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="vmModal2" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel2">虚拟机设置</h4>
+            </div>
+            <div class="modal-body">
+                <form role="form">
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入名称" v-model="destNameSelect">
+                        </label>
+                    </div>
+                </form>
+                <div class="form-group">
+                    <label for="ip2">IP(V4):</label>
+                    <select id="ip2" class="form-control" v-model="ipSelect">
+                        <option value="" disabled>---请选择IP地址---</option>
+                        <option v-for="ip in ipList">{{ip}}</option>
+                    </select>
+                </div>
+                <label for="nodeIp3">Host-IP(V4):</label>
+                <select id="nodeIp3" class="form-control" v-model="nodeIpSelect">
+                    <option value="" disabled>---请选择IP地址---</option>
+                    <option v-for="ip in nodeIpList">{{ip}}</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmClone()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- VM删除模态框（Modal） -->
+<div class="modal fade" id="delModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="vmModal3" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title" id="myModalLabel3">是否删除此虚拟机</h2>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmDelete()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- VM迁移模态框（Modal） -->
+<div class="modal fade" id="migrateModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="vmModal4" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title" id="myModalLabel4">迁移设置</h2>
+            </div>
+            <div class="form-group">
+                <form role="form">
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入名称" v-model="destNameSelect">
+                        </label>
+                    </div>
+                </form>
+                <label for="nodeIp2">Host-IP(V4):</label>
+                <select id="nodeIp2" class="form-control" v-model="nodeIpSelect">
+                    <option value="" disabled>---请选择IP地址---</option>
+                    <option v-for="ip in nodeIpList">{{ip}}</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmMigrate()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- 容器创建模态框（Modal） -->
+<div class="modal fade" id="runModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="ctModal1" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title" id="myModalLabel5">容器设置</h2>
+            </div>
+            <div class="form-group">
+                <form role="form">
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入名称" v-model="nameSelect">
+                        </label>
+                    </div>
+                </form>
+                <label for="imageList">Host-IP(V4):</label>
+                <label for="imageSelect"></label>
+                <select id="imageSelect" class="form-control" v-model="imageSelect">
+                    <option value="" disabled>---请选择镜像---</option>
+                    <option v-for="image in imageList">
+                        {{image.name}}
+                        &nbsp&nbsp
+                        {{image.nodeIp}}
+                        &nbsp&nbsp
+                        {{image.size}}
+                    </option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmRun()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- 容器删除模态框（Modal） -->
+<div class="modal fade" id="delModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="ctModal2" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title" id="myModalLabel6">是否删除此容器</h2>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmDelete()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- 容器提交模态框（Modal） -->
+<div class="modal fade" id="commitModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="ctModal3" class="modal-dialog">
+        <div class="modal-content">
+            <
+            <div class="form-group">
+                <form role="form">
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入仓库名" v-model="repositorySelect">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入版本" v-model="tagSelect">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入作者" v-model="authorSelect">
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入描述信息" v-model="describeSelect">
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmCommit()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+
+<!-- 镜像拉取模态框（Modal） -->
+<div class="modal fade" id="pullModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="imageModal1" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title" id="myModalLabel7">拉取设置</h2>
+            </div>
+            <div class="form-group">
+                <form role="form">
+                    <div class="form-group">
+                        <label>
+                            <input type="text" class="form-control" placeholder="请输入URI/Repository:Tag"
+                                   v-model="uriSelect">
+                        </label>
+                    </div>
+                    <label for="nodeIp4">Host-IP(V4):</label>
+                    <select id="nodeIp4" class="form-control" v-model="nodeIpSelect">
+                        <option value="" disabled>---请选择IP地址---</option>
+                        <option v-for="ip in nodeIpList">{{ip}}</option>
+                    </select>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmPull()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- 镜像删除模态框（Modal） -->
+<div class="modal fade" id="delModal3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div id="imageModal2" class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h2 class="modal-title" id="myModalLabel8">是否删除此镜像</h2>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" v-on:click="confirmDelete()">确定
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://fastly.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"
+        integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ"
+        crossorigin="anonymous"></script>
+<script>window.jQuery || document.write('<script src="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/assets/js/vendor/jquery.min.js"><\/script>')</script>
+<script src="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/dist/js/bootstrap.min.js"></script>
+<!-- Just to make our placeholder images work. Don't actually copy the next line! -->
+<script src="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/assets/js/vendor/holder.min.js"></script>
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="https://fastly.jsdelivr.net/npm/@bootcss/v3.bootcss.com@1.0.33/assets/js/ie10-viewport-bug-workaround.js"></script>
+<!--在其他库-->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.min.js"></script>
+<script type="text/javascript" src="js/echarts.js"></script>
+<script src="http://unpkg.com/axios/dist/axios.min.js"></script>
+
+<script>
+    var vmVue = new Vue({
+        el: "#vmList",
+        data: {
+            vmList: [],
+            selectIndex: 0
+        },
+
+        mounted() {
+            this.listVM()
+        },
+
+        methods: {
+            listVM: function () {
+                axios.post('VMServlet', {type: 'list'}).then(response => {
+                    if (response.data['success'])
+                        this.vmList = response.data['vmList']
+                })
+            },
+
+            openVM: function (index) {
+                var domainName = this.vmList[index].domainName
+                this.selectIndex = index
+                axios.post('VMServlet', {type: 'open', domainName: domainName}).then(response => {
+                    var success = response.data['success']
+
+                    if (success) {
+                        this.vmList[this.selectIndex].state = 1
+                    } else
+                        this.vmList[this.selectIndex].state = -1
+                })
+            },
+
+            closeVM: function (index) {
+                var domainName = this.vmList[index].domainName
+                this.selectIndex = index
+                axios.post('VMServlet', {type: 'close', domainName: domainName}).then(response => {
+                    var success = response.data['success']
+
+                    if (success) {
+                        if (this.vmList[this.selectIndex].persistent)
+                            this.vmList[this.selectIndex].state = 0
+                        else
+                            this.vmList.splice(this.selectIndex, 1)
+                    } else
+                        this.vmList[this.selectIndex].state = -1
+                })
+            },
+
+            deleteVM: function (index) {
+                this.selectIndex = index
+            },
+
+            cloneVM: function (index) {
+                this.selectIndex = index
+                refreshIP()
+            },
+
+            migrateVM: function (index) {
+                this.selectIndex = index
+                refreshIP()
+            },
+
+            enterInfo: function (index) {
+                this.selectIndex = index
+                var vm = this.vmList[index]
+                if (vm.state !== 1) {
+                    alert("虚拟机未开启")
+                    return
+                }
+                var href = '/CloudCompute/myecharts.html?domainName=' + vm.domainName
+                href += "&nodeIp=" + this.vmList[index].nodeIp
+                href += "&state=" + this.vmList[index].state
+                href += "&ip=" + this.vmList[index].ip
+                href += "&memory=" + this.vmList[index].memory
+                href += "&vcpu=" + this.vmList[index].vcpu
+                href += "&capacity=" + this.vmList[index].capacity
+                href += "&persistent=" + this.vmList[index].persistent
+                window.open(href)
+            }
+        }
+    });
+
+    function refreshIP() {
+        axios.post('VMServlet', {type: 'ips'}).then(response => {
+            createVue.ipList = response.data['ips']
+            cloneVue.ipList = response.data['ips']
+        })
+        axios.post('VMServlet', {
+            type: 'nodeIps',
+            nodeIp: vmVue.vmList[vmVue.selectIndex].nodeIp
+        }).then(response => {
+            createVue.nodeIpList = response.data['nodeIps']
+            pullVue.nodeIpList = response.data['nodeIps']
+            cloneVue.nodeIpList = response.data['nodeIps']
+            migrateVue.nodeIpList = []
+            for (let i = 0; i < createVue.nodeIpList.length; i++) {
+                if (this.vmList[this.selectIndex].nodeIp !== createVue.nodeIpList[i])
+                    migrateVue.nodeIpList.push(createVue.nodeIpList[i])
+            }
+        })
+    }
+
+    var createVue = new Vue({
+        el: "#createModal",
+        data: {
+            nameSelect: '',
+            cpuSelect: '',
+            memSelect: '',
+            diskSelect: '',
+            ipSelect: '',
+            nodeIpSelect: '',
+            ipList: [],
+            nodeIpList: [],
+        },
+
+        methods: {
+            confirmCreate: function () {
+                if (this.cpuSelect === '' || this.memSelect === '' || this.diskSelect === '' || this.ipSelect === '') {
+                    alert('请输入正确信息')
+                    return
+                }
+                if (!checkName(this.nameSelect)) {
+                    alert('名称已存在')
+                    return;
+                }
+                var vm = {
+                    state: 2,
+                    domainName: this.nameSelect,
+                    vcpu: this.cpuSelect,
+                    memory: this.memSelect,
+                    capacity: this.diskSelect,
+                    ip: '***.***.***.***',
+                    nodeIp: '***.***.***.***'
+                }
+                vmVue.vmList.push(vm)
+                axios.post('VMServlet', {
+                        type: 'create',
+                        domainName: this.nameSelect,
+                        cpu: this.cpuSelect,
+                        memory: this.memSelect,
+                        capacity: this.diskSelect,
+                        ip: this.ipSelect,
+                        nodeIp: this.nodeIpSelect
+                    }
+                ).then(response => {
+                    var success = response.data['success']
+                    var vm2 = response.data['vm']
+                    if (success) {
+                        vm.nodeIp = vm2.nodeIp
+                        vm.ip = vm2.ip
+                        vm.state = 0
+                        vm.persistent = vm2.persistent
+                    } else
+                        alert('create failed')
+                })
+            },
+        }
+    })
+
+    var cloneVue = new Vue({
+        el: "#cloneModal",
+        data: {
+            destNameSelect: '',
+            ipSelect: '',
+            nodeIpSelect: '',
+            ipList: [],
+            nodeIpList: []
+        },
+
+        methods: {
+            confirmClone: function () {
+                var srcVM = vmVue.vmList[vmVue.selectIndex]
+                if (!checkName(this.destNameSelect)) {
+                    alert('名称已存在')
+                    return
+                }
+                if (srcVM.state === 1) {
+                    alert('请先关闭虚拟机')
+                    return
+                }
+                var vm = {
+                    state: 2,
+                    domainName: this.destNameSelect,
+                    vcpu: srcVM.vcpu,
+                    memory: srcVM.memory,
+                    capacity: srcVM.capacity,
+                    ip: '***.***.***.***',
+                    nodeIp: '***.***.***.***'
+                }
+                vmVue.vmList.push(vm)
+                axios.post('VMServlet', {
+                    type: 'clone',
+                    srcDomainName: srcVM.domainName,
+                    destDomainName: this.destNameSelect,
+                    ip: this.ipSelect,
+                    nodeIp: this.nodeIpSelect
+                }).then(response => {
+                    var success = response.data['success']
+                    var vm2 = response.data['vm']
+                    if (success) {
+                        vm.persistent = vm2.persistent
+                        vm.state = vm2.state
+                        vm.ip = vm2.ip
+                        vm.nodeIp = vm2.nodeIp
+                    } else
+                        alert('clone failed')
+                })
+            },
+        },
+    })
+
+    var delVue = new Vue({
+        el: "#delModal",
+        methods: {
+            confirmDelete: function () {
+                var domainName = vmVue.vmList[vmVue.selectIndex].domainName
+                axios.post('VMServlet', {type: 'delete', domainName: domainName}).then(response => {
+                    var success = response.data['success']
+                    if (success)
+                        vmVue.vmList.splice(vmVue.selectIndex, 1)
+                    else
+                        vmVue.vmList[i].state = -1
+                })
+            },
+        },
+    })
+
+    var migrateVue = new Vue({
+        el: "#migrateModal",
+        data: {
+            destNameSelect: '',
+            nodeIpSelect: '',
+            nodeIpList: [],
+        },
+
+        methods: {
+            confirmMigrate: function () {
+                var srcVM = vmVue.vmList[vmVue.selectIndex]
+                if (!checkName(this.destNameSelect)) {
+                    alert('名称已存在')
+                    return
+                }
+                if (vmVue.vmList[vmVue.selectIndex].state !== 1) {
+                    alert('虚拟机未运行')
+                    return;
+                }
+                vmVue.vmList[vmVue.selectIndex].state = 3
+                axios.post('VMServlet', {
+                    type: 'migrate',
+                    srcDomainName: srcVM.domainName,
+                    nodeIp: this.nodeIpSelect,
+                    destDomainName: this.destNameSelect
+                }).then(response => {
+                    var success = response.data['success']
+                    var vm = response.data['vm']
+                    if (success) {
+                        vmVue.vmList[vmVue.selectIndex].state = 0
+                        vmVue.vmList.push(vm)
+                    } else
+                        alert('migrate failed')
+                })
+            },
+        },
+    })
+
+    $(function () {
+        // $('#myTab a:last').tab('show');//初始化显示哪个tab
+        $('#myTab a').click(function (even) {
+            even.preventDefault();//阻止a链接的跳转行为
+            $(this).tab('show');//显示当前选中的链接及关联的content
+        })
+    })
+
+    function checkName(domainName) {
+        for (let i = 0; i < vmVue.vmList.length; i++) {
+            if (domainName === vmVue.vmList[i].domainName) {
+                return false
+            }
+        }
+        return true
+    }
+
+
+    var ctVue = new Vue({
+        el: "#ctList",
+        data: {
+            ctList: [],
+            selectIndex: 0
+        },
+
+        mounted() {
+            this.listContainer()
+        },
+
+        methods: {
+            createContainer: function () {
+                runVue.imageList = imageVue.imageList
+            },
+
+            listContainer: function () {
+                axios.post('CTServlet', {type: 'list'}).then(response => {
+                    if (response.data['success'])
+                        this.ctList = response.data['ctList']
+                })
+            },
+
+            openContainer: function (index) {
+                var name = this.ctList[index].name
+                var nodeIp = this.ctList[index].nodeIp
+                this.selectIndex = index
+                axios.post('CTServlet', {
+                    type: 'open',
+                    name: name,
+                    nodeIp: nodeIp,
+                }).then(response => {
+                    var success = response.data['success']
+                    if (success) {
+                        this.ctList[this.selectIndex].running = response.data['ct'].running
+                        this.ctList[this.selectIndex].ip = response.data['ct'].ip
+                    } else
+                        this.ctList[this.selectIndex].status = "error"
+                })
+            },
+
+            closeContainer: function (index) {
+                var name = this.ctList[index].name
+                var nodeIp = this.ctList[index].nodeIp
+                this.selectIndex = index
+                axios.post('CTServlet', {
+                    type: 'close',
+                    name: name,
+                    nodeIp: nodeIp
+                }).then(response => {
+                    var success = response.data['success']
+                    if (success) {
+                        this.ctList[this.selectIndex].running = false
+                        this.ctList[this.selectIndex].ip = ''
+                    } else
+                        alert('close failed')
+                })
+            },
+
+            deleteContainer: function (index) {
+                this.selectIndex = index
+            },
+
+            commitContainer: function (index) {
+                this.selectIndex = index
+            }
+        }
+    });
+
+    var delVue2 = new Vue({
+        el: "#delModal2",
+        methods: {
+            confirmDelete: function () {
+                var name = ctVue.ctList[ctVue.selectIndex].name
+                var nodeIp = ctVue.ctList[ctVue.selectIndex].nodeIp
+                axios.post('CTServlet', {
+                    type: 'delete',
+                    name: name,
+                    nodeIp: nodeIp
+                }).then(response => {
+                    var success = response.data['success']
+                    if (success)
+                        ctVue.ctList.splice(ctVue.selectIndex, 1)
+                    else
+                        alert('delete failed')
+                })
+            },
+        },
+    });
+
+    var commitVue = new Vue({
+        el: "#commitModal",
+        data: {
+            repositorySelect: '',
+            tagSelect: '',
+            authorSelect: '',
+            describeSelect: '',
+        },
+        methods: {
+            confirmCommit: function () {
+                var name = ctVue.ctList[ctVue.selectIndex].name
+                var nodeIp = ctVue.ctList[ctVue.selectIndex].nodeIp
+                axios.post('CTServlet', {
+                    type: 'commit',
+                    name: name,
+                    nodeIp: nodeIp,
+                    repository: this.repositorySelect,
+                    tag: this.tagSelect,
+                    author: this.authorSelect,
+                    describe: this.describeSelect,
+                }).then(response => {
+                    var success = response.data['success']
+                    if (success) {
+                        var image = response.data['image']
+                        imageVue.imageList.push(image)
+                        alert('commit successful')
+                    } else
+                        alert('commit failed')
+                })
+            },
+        },
+    })
+
+    var runVue = new Vue({
+        el: "#runModal",
+        data: {
+            imageList: [],
+            nameSelect: '',
+            imageSelect: 0,
+        },
+        methods: {
+            confirmRun: function () {
+                var imageName = this.imageSelect.split(/\s+/)[0]
+                var nodeIp = this.imageSelect.split(/\s+/)[1]
+                axios.post('CTServlet', {
+                    type: 'create',
+                    imageName: imageName,
+                    name: this.nameSelect,
+                    nodeIp: nodeIp,
+                }).then(response => {
+                    var success = response.data['success']
+                    var ct = response.data['ct']
+                    if (success) {
+                        ctVue.ctList.push(ct)
+                    } else
+                        alert('create failed')
+                })
+            },
+        },
+    });
+
+
+    var imageVue = new Vue({
+        el: "#imageList",
+        data: {
+            imageList: [],
+            selectIndex: 0
+        },
+
+        mounted() {
+            this.listImage()
+        },
+
+        methods: {
+            listImage: function () {
+                axios.post('ImageServlet', {type: 'list'}).then(response => {
+                    if (response.data['success'])
+                        this.imageList = response.data['imageList']
+                })
+            },
+
+            pullImage: function () {
+                refreshIP()
+            },
+
+            deleteImage: function (index) {
+                this.selectIndex = index
+            },
+
+            pushImage: function (index) {
+                this.selectIndex = index
+                var name = this.imageList[index].name
+                var nodeIp = this.imageList[index].nodeIp
+                axios.post('ImageServlet', {
+                    type: 'push',
+                    name: name,
+                    nodeIp: nodeIp,
+                }).then(response => {
+                    var success = response.data['success']
+                    if (success) {
+                        alert("push successful")
+
+                    } else {
+                        alert("push failed")
+                    }
+                })
+            },
+
+        }
+    });
+
+    var delVue3 = new Vue({
+        el: "#delModal3",
+        methods: {
+            confirmDelete: function () {
+                var name = imageVue.imageList[imageVue.selectIndex].name
+                var nodeIp = imageVue.imageList[imageVue.selectIndex].nodeIp
+                axios.post('ImageServlet', {
+                    type: 'delete',
+                    name: name,
+                    nodeIp: nodeIp
+                }).then(response => {
+                    var success = response.data['success']
+                    if (success)
+                        imageVue.imageList.splice(imageVue.selectIndex, 1)
+                    else
+                        alert('delete failed')
+                })
+            },
+        },
+    });
+
+    var pullVue = new Vue({
+        el: "#pullModal",
+        data: {
+            uriSelect: '',
+            nodeIpSelect: '',
+            nodeIpList: []
+        },
+        methods: {
+            confirmPull: function () {
+                axios.post('ImageServlet', {
+                    type: 'pull',
+                    name: this.uriSelect,
+                    nodeIp: this.nodeIpSelect,
+                }).then(response => {
+                    var success = response.data['success']
+                    var image = response.data['image']
+                    if (success) {
+                        imageVue.imageList.push(image)
+                    } else
+                        alert('pull failed')
+                })
+            },
+        },
+    });
+
+</script>
+</body>
+</html>

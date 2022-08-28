@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化</title>
+    <link rel="stylesheet" href="css/myecharts.css"/>
+    <script type="text/javascript" src="js/echarts.js"></script>
+    <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"
+            integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+            crossorigin="anonymous"></script>
+    <script type="text/javascript" src="js/echarts.js"></script>
+    <script type="text/javascript" src="js/echarts-liquidfill.min.js"></script>
+    <script src="http://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.min.js"></script>
+</head>
+<body>
+<header>
+    <h1 id="title">Monitor-{{domainName}}</h1>
+    <div id="time"></div>
+</header>
+
+<section class="mainBox">
+    <div class="columns">
+        <div class="panel">
+            <div id="mem" style="width: 400px;height:600px;"></div>
+        </div>
+    </div>
+    <div class="columns">
+        <div class="panel">
+            <div id="cpu" style="width: 600px;height:600px;"></div>
+        </div>
+    </div>
+    <div class="columns">
+        <div class="panel">
+            <div id="disk" style="width: 400px;height:600px;"></div>
+        </div>
+    </div>
+</section>
+
+<script>
+    vmInfo = {
+        nVcpu: 2,
+        cpuRate: 0.0,
+        memRate: 0.0,
+        memTotal: 0.0,
+        diskAllocation: 0.0,
+        diskTotal: 0.0,
+    };
+    parameter = getRequest();
+    vm = {
+        domainName: parameter['domainName'],
+        nodeIp: parameter['nodeIp'],
+        state: parameter['state'],
+        ip: parameter['ip'],
+        memory: parameter['memory'],
+        vcpu: parameter['vcpu'],
+        capacity: parameter['capacity'],
+        persistent: parameter['persistent'],
+    }
+    refresh();
+
+
+    var titleVue = new Vue({
+        el: "#title",
+        data: {
+            domainName: vm.domainName,
+        },
+    });
+
+    //disk
+    (function () {
+        var myChart = echarts.init(document.getElementById('disk'));
+        var option;
+        const diskData = [
+            {
+                value: 0,
+                name: 'Disk Usage',
+                title: {
+                    offsetCenter: ['0%', '-50%']
+                },
+                detail: {
+                    valueAnimation: true,
+                    offsetCenter: ['0%', '-20%']
+                }
+            },
+        ];
+        option = {
+            title: {
+                text: 'Disk'
+            },
+            series: [
+                {
+                    type: 'gauge',
+                    startAngle: 90,
+                    endAngle: -270,
+                    pointer: {
+                        show: false
+                    },
+                    progress: {
+                        show: true,
+                        overlap: false,
+                        roundCap: true,
+                        clip: false,
+                        itemStyle: {
+                            borderWidth: 1,
+                            borderColor: '#464646'
+                        }
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            width: 40
+                        }
+                    },
+                    splitLine: {
+                        show: false,
+                        distance: 0,
+                        length: 10
+                    },
+                    axisTick: {
+                        show: false
+                    },
+                    axisLabel: {
+                        show: false,
+                        distance: 50
+                    },
+                    data: diskData,
+                    title: {
+                        fontSize: 14
+                    },
+                    detail: {
+                        width: 100,
+                        height: 14,
+                        fontSize: 14,
+                        color: 'auto',
+                        borderColor: 'auto',
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        formatter: '{value}%' + "(" + vm.capacity + "G)"
+                    }
+                }
+            ]
+        };
+        setInterval(function () {
+            diskData[0].value = (vmInfo.diskAllocation / vmInfo.diskTotal * 100).toFixed(2)
+            myChart.setOption({
+                series: [
+                    {
+                        data: diskData,
+                        pointer: {
+                            show: false
+                        }
+                    }
+                ]
+            });
+        }, 5000);
+        // 使用刚指定的配置项和数据显示图表。
+
+        myChart.setOption(option);
+
+        window.addEventListener("resize", function () {
+            myChart.resize();
+        });
+
+    })();
+
+
+    //cpu
+    (function () {
+
+        var chartDom = document.getElementById('cpu');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        function randomData() {
+            now = new Date(+now + oneDay);
+            value = Math.random() * 5 + 40;
+            axios
+            return {
+                name: now.toString(),
+                value: [
+                    [now.getFullYear(), now.getMonth() + 1, now.getDate()].join('/'),
+                    (vmInfo.cpuRate * 100).toFixed(2) //cpu数据
+                ]
+            };
+        }
+
+        let data = [];
+        let now = new Date(1997, 9, 3);
+        let oneDay = 24 * 3600 * 1000;
+        let value = Math.random() * 1000;
+        for (var i = 0; i < 1000; i++) {
+            data.push(randomData());
+        }
+        option = {
+            title: {
+                text: 'CPU'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    params = params[0];
+                    return (
+                        params.value[1] + '%'
+                    );
+                },
+                axisPointer: {
+                    animation: false
+                }
+            },
+            xAxis: {
+                type: 'time',
+                show: false,
+                splitLine: {
+                    show: false
+                }
+            },
+            yAxis: {
+                type: 'value',
+                boundaryGap: [0, '100%'],
+                splitLine: {
+                    show: false
+                }
+            },
+            series: [
+                {
+                    name: 'Fake Data',
+                    type: 'line',
+                    showSymbol: false,
+                    data: data
+                }
+            ]
+        };
+        setInterval(function () {
+            for (var i = 0; i < 5; i++) {
+                data.shift();
+                data.push(randomData());
+            }
+            myChart.setOption({
+                series: [
+                    {
+                        data: data
+                    }
+                ]
+            });
+        }, 5000);
+        // 使用刚指定的配置项和数据显示图表。
+
+        myChart.setOption(option);
+
+        window.addEventListener("resize", function () {
+            myChart.resize();
+        });
+
+    })();
+
+    //mem
+
+    (function () {
+        var myChart = echarts.init(document.getElementById('mem'));
+        var option;
+        const memData = [
+            {
+                value: 0,
+                name: 'Memory Usage',
+                title: {
+                    offsetCenter: ['0%', '-50%']
+                },
+                detail: {
+                    valueAnimation: true,
+                    offsetCenter: ['0%', '-20%']
+                }
+            },
+        ];
+        option = {
+            title: {
+                text: 'Memory'
+            },
+            series: [
+                {
+                    type: 'gauge',
+                    startAngle: 90,
+                    endAngle: -270,
+                    pointer: {
+                        show: false
+                    },
+                    progress: {
+                        show: true,
+                        overlap: false,
+                        roundCap: true,
+                        clip: false,
+                        itemStyle: {
+                            borderWidth: 1,
+                            borderColor: '#464646'
+                        }
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            width: 40
+                        }
+                    },
+                    splitLine: {
+                        show: false,
+                        distance: 0,
+                        length: 10
+                    },
+                    axisTick: {
+                        show: false
+                    },
+                    axisLabel: {
+                        show: false,
+                        distance: 50
+                    },
+                    data: memData,
+                    title: {
+                        fontSize: 14
+                    },
+                    detail: {
+                        width: 100,
+                        height: 14,
+                        fontSize: 14,
+                        color: 'auto',
+                        borderColor: 'auto',
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        formatter: '{value}%' + "(" + vm.memory + "G)"
+                    }
+                }
+            ]
+        };
+        setInterval(function () {
+            memData[0].value = (vmInfo.memRate * 100).toFixed(2)
+            myChart.setOption({
+                series: [
+                    {
+                        data: memData,
+                        pointer: {
+                            show: false
+                        }
+                    }
+                ]
+            });
+        }, 5000);
+        // 使用刚指定的配置项和数据显示图表。
+
+        myChart.setOption(option);
+
+        window.addEventListener("resize", function () {
+            myChart.resize();
+        });
+
+    })();
+
+    time = document.getElementById("time")
+
+    function refresh() {
+        axios.post('VMServlet', {
+            type: 'info',
+            domainName: vm.domainName,
+        }).then(response => {
+            var success = response.data['success']
+            if (success) {
+                vmInfo = response.data['vmInfo']
+            } else
+                alert('get info failed')
+        })
+    }
+
+    displayTime = function () {
+        time.innerHTML = new Date().toString()
+        refresh()
+    }
+
+
+    window.setInterval("displayTime()", 1000)
+
+    //获取url带过来的参数
+    function getRequest() {
+        var url = location.search; //获取url中"?"符后的字串
+        var theRequest = {};
+        if (url.indexOf("?") !== -1) {
+            var str = url.substr(1);
+            var strs = str.split("&");
+            for (var i = 0; i < strs.length; i++) {
+                var split = strs[i].split("=")
+                theRequest[split[0]] = unescape(split[1]);
+            }
+        }
+        return theRequest;
+    }
+
+</script>
+</body>
+</html>
